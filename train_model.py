@@ -1,12 +1,13 @@
 import tensorflow as tf
 import cv2
 import numpy as np
+import math
 import os
+from data_augmentation import dataset_with_augmentation
 
 ## change these directories to match your system
 TENSORBOARD_DIR = '/home/intern/code/Digit_Recognizer/tensorboard_logs/'
 SAVED_MODELS_DIR = '/home/intern/code/Digit_Recognizer/saved_models/'
-
 
 def make_model(show_summary = True):
     ##make model
@@ -63,10 +64,10 @@ def train_model(model, epochs=1, early_stopper_patience = 20):
                                                             )
 
     #fit model
-    model.fit(x_train, y_train,
+    model.fit(train_ds,
             epochs=epochs, 
             verbose = 1,
-            validation_data=(x_validation, y_validation),
+            validation_data=validation_ds,
             callbacks=[early_stopper, tensorboard_callback])
 
     return model, model_filename
@@ -108,13 +109,16 @@ def load_model(load_model_name):
         return load_model(input("Input name for model: "))
 
 
+
 def unisonShuffleDataset(a, b):
     assert len(a) == len(b)
     p = np.random.permutation(len(a))
     return a[p], b[p]
 
 
-def load_data(percentage = 1, validation_split = 0.15):
+
+
+def load_data(percentage = 1, validation_split = 0.15, augment_data = True):
     #load data 
     mnist = tf.keras.datasets.mnist
     (x_train_all, y_train_all), (x_test, y_test) = mnist.load_data()
@@ -144,16 +148,43 @@ def load_data(percentage = 1, validation_split = 0.15):
     x_validation = np.expand_dims(x_validation,axis=-1)
     x_test = np.expand_dims(x_test,axis=-1)
 
+
+    ##shuffle data
     x_train, y_train = unisonShuffleDataset(x_train, y_train)
     x_validation, y_validation = unisonShuffleDataset(x_validation, y_validation)
     x_test, y_test = unisonShuffleDataset(x_test, y_test)
 
+    ##one hot encode y data
     y_train = tf.keras.utils.to_categorical(y_train)
     y_validation = tf.keras.utils.to_categorical(y_validation)
     y_test = tf.keras.utils.to_categorical(y_test)
 
 
-    return x_train, y_train, x_validation, y_validation, x_test, y_test
+    ##addd data augmentation
+    transformations = []
+    if augment_data:
+        transformations = [
+            {"name":"rotate",
+            "min_rad":-math.pi/9,
+            "max_rad":math.pi/9},
+            
+            {"name":"crop",
+            "min_pad":0,
+            "max_pad":5},
+
+            {"name":"brightness",
+            "range":0.07},
+
+            {"name":"contrast",
+            "min":0.85,
+            "max":1.3}
+            ]
+        
+    train_ds = dataset_with_augmentation(x_train, y_train, transformations, 32)
+    validation_ds = dataset_with_augmentation(x_validation, y_validation, [], 32) #don't apply transformations to the val data
+
+
+    return train_ds, validation_ds, x_test, y_test
 
 
 def cycle_results(x_data, y_data, dimensions=(28, 28), model = ""):
@@ -192,30 +223,37 @@ def cycle_results(x_data, y_data, dimensions=(28, 28), model = ""):
             n+=1
 
 
-
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
 
-x_train, y_train, x_validation, y_validation, x_test, y_test = load_data()
+def main():
 
-command = input("Enter file name or press enter to train new network: ")
+    global train_ds, validation_ds, x_test, y_test
 
+    train_ds, validation_ds, x_test, y_test = load_data()
 
-if command:
-    model = load_model(command)
-
-else:
-    input("\nPress enter to continue with training model: ")
-
-    model = make_model(show_summary=True)
-
-    model, model_filename = train_model(model, epochs=1000, early_stopper_patience=20)
-
-    save_model(model, name = model_filename)
+    command = input("Enter file name or press enter to train new network: ")
 
 
+    if command:
+        model = load_model(command)
 
-test_model(x_test, y_test, model, prompt_user=True)
+    else:
+        input("\nPress enter to continue with training model: ")
 
-cycle_results(x_test, y_test, model=model)
+        model = make_model(show_summary=True)
+
+        model, model_filename = train_model(model, epochs=200, early_stopper_patience=20)
+
+        save_model(model, name = model_filename)
+
+
+
+    test_model(x_test, y_test, model, prompt_user=True)
+
+    cycle_results(x_test, y_test, model=model)
+
+if __name__ == "__main__":
+   # stuff only to run when not called via 'import' here
+   main()
