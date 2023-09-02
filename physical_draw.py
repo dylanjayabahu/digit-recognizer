@@ -6,6 +6,20 @@ from pprint import pprint
 import random
 import tensorflow as tf
 
+HOME_DIR = '/home/intern/code/Digit_Recognizer/'
+
+def save_as_tflite(model):
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    converter.target_spec.supported_types = [tf.float16] ##make sure input is float16 not float32
+    save_filename = '%s_float16.tflite' % "mnist_digit"
+    tflite_model = converter.convert()
+    
+    print('Saving model as %s' % save_filename)
+    
+    with open(save_filename, 'wb') as f:
+        f.write(tflite_model)
+
 
 def generate_random_color():
     r = random.randint(0, 255)
@@ -17,13 +31,29 @@ def predict_with_model(image):
     ##takes in a normalized 28x28 image and feeds it into model
     ##returns models prediction as an integer
 
-    prediction = model.predict(np.array([image]), verbose=0)
+    ##uses tflite model
+
+    # Load TFLite model and allocate tensors.
+    interpreter = tf.lite.Interpreter(model_path="mnist_digit_float16.tflite")
+    interpreter.allocate_tensors()
     
-    #print prediction and certainty
-    print("Prediction: " + str(np.argmax(prediction[0])),  "Certainty: " + str(100*np.max(prediction[0])) + "%",  end="\r")
+    # Get input and output tensors.
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+    
+    # Test model on random input data.
+    input_shape = input_details[0]['shape']
+    input_data = np.array(image, dtype=np.float16)
+    assert input_data.shape = input_shape
+    
+    interpreter.set_tensor(input_details[0]['index'], input_data)
+    
+    interpreter.invoke()
+    
+    output_data = interpreter.get_tensor(output_details[0]['index'])
 
 
-    return int(np.argmax(prediction[0])), 100*np.max(prediction[0])
+    return int(np.argmax(output_data[0])), 100*np.max(output_data[0])
 
 
 def normalize_digit(image, visualize = True):
@@ -220,9 +250,11 @@ def crop_digit_from_frame(frame):
 
 
 
-#load model
-##ensure SAVE_MODEL_DIR is set correctly in train_model.py and pass model name here
-model = load_model('mnist_classifier') 
+
+##ensure SAVE_MODEL_DIR is set correctly in train_model.py and pass model name here. This will only be run once to save as tflite.
+if not os.path.exists(HOME_DIR + mnist_digit_float16.tflite)
+    model = load_model('mnist_classifier') 
+    save_as_tflite(model)
 
 col = (255, 0, 0) ##BGR Col for text on screen
 cam = cv2.VideoCapture('/dev/video0')
