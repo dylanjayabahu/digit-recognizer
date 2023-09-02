@@ -224,17 +224,6 @@ def crop_digit_from_frame(frame):
 ##ensure SAVE_MODEL_DIR is set correctly in train_model.py and pass model name here
 model = load_model('mnist_classifier') 
 
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
-converter.target_spec.supported_types = [tf.float16] ##make sure input is float16 not float32
-save_filename = '%s_float16.tflite' % "mnist_digit"
-tflite_model = converter.convert()
-
-print('Saving model as %s' % save_filename)
-
-with open(save_filename, 'wb') as f:
-    f.write(tflite_model)
-
 col = (255, 0, 0) ##BGR Col for text on screen
 cam = cv2.VideoCapture('/dev/video0')
 
