@@ -5,6 +5,7 @@ import time
 from pprint import pprint
 import random
 import tensorflow as tf
+import os
 
 # HOME_DIR = '/home/intern/code/Digit_Recognizer/'
 HOME_DIR = '/home/pi/code/Digit_Recognizer/'
@@ -28,26 +29,38 @@ def predict_with_model(image):
     ##uses tflite model
 
     # Load TFLite model and allocate tensors.
-    interpreter = tf.lite.Interpreter(model_path="mnist_digit_float16.tflite")
-    interpreter.allocate_tensors()
+    # interpreter = tf.lite.Interpreter(model_path="mnist_digit_float16.tflite")
+    # interpreter.allocate_tensors()
     
-    # Get input and output tensors.
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
+    # # Get input and output tensors.
+    # input_details = interpreter.get_input_details()
+    # output_details = interpreter.get_output_details()
     
-    # Test model on random input data.
-    input_shape = input_details[0]['shape']
-    input_data = np.array(image, dtype=np.float16)
-    assert input_data.shape == input_shape
+    # # Test model on random input data.
+    # input_shape = input_details[0]['shape']
+    # input_data = np.array(image, dtype=np.float16)
+    # # assert input_data.shape == input_shape
     
-    interpreter.set_tensor(input_details[0]['index'], input_data)
+    # interpreter.set_tensor(input_details[0]['index'], input_data)
     
-    interpreter.invoke()
+    # interpreter.invoke()
     
-    output_data = interpreter.get_tensor(output_details[0]['index'])
+    # output_data = interpreter.get_tensor(output_details[0]['index'])
 
 
-    return int(np.argmax(output_data[0])), 100*np.max(output_data[0])
+    # return int(np.argmax(output_data[0])), 100*np.max(output_data[0])
+
+
+    ##takes in a normalized 28x28 image and feeds it into model
+    ##returns models prediction as an integer
+
+    prediction = model.predict(np.array([image]), verbose=0)
+
+    #print prediction and certainty
+    print("Prediction: " + str(np.argmax(prediction[0])),  "Certainty: " + str(100*np.max(prediction[0])) + "%",  end="\r")
+
+
+    return int(np.argmax(prediction[0])), 100*np.max(prediction[0])
 
 
 def normalize_digit(image, visualize = True):
@@ -137,8 +150,9 @@ def crop_digit_from_frame(frame, visualize = True):
             # directly warp the rotated rectangle to get the straightened rectangle
             warped = cv2.warpPerspective(original_frame, matrix, (width, height))
 
-            cv2.imshow("warped", warped)
-            cv2.waitKey(1)
+            if visualize:
+                cv2.imshow("warped", warped)
+                cv2.waitKey(1)
 
             warped_threshold = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
             _, warped_threshold = cv2.threshold(warped_threshold, 0, 255, cv2.THRESH_OTSU)
@@ -226,13 +240,20 @@ def crop_digit_from_frame(frame, visualize = True):
 
                 cropped = warped[min(y1, y2):max(y1, y2), min(x1, x2):max(x1, x2)]
 
-                if visualize:
-                    cv2.imshow("warped", warped)
-                    cv2.waitKey(1)
-                    cv2.imshow("warped_thresh", warped_threshold)
-                    cv2.waitKey(1)
-                    cv2.imshow("final cropped", cropped)
-                    cv2.waitKey(1)
+
+
+                if min([cropped.shape[0], cropped.shape[1]]) < 6:
+                    cropped = None
+                else:
+                    if visualize:
+                        cv2.imshow("warped", warped)
+                        cv2.waitKey(1)
+                        cv2.imshow("warped_thresh", warped_threshold)
+                        cv2.waitKey(1)
+                        cv2.imshow("final cropped", cropped)
+                        cv2.waitKey(1)
+
+                
 
 
     if visualize:
@@ -245,9 +266,11 @@ def crop_digit_from_frame(frame, visualize = True):
 
 
 ##ensure SAVE_MODEL_DIR is set correctly in train_model.py and pass model name here. This will only be run once to save as tflite.
-if not os.path.exists(HOME_DIR + mnist_digit_float16.tflite):
-    model = load_model('mnist_classifier') 
-    save_as_tflite(model)
+# if not os.path.exists(HOME_DIR + "mnist_digit_float16.tflite"):
+#     model = load_model('mnist_classifier') 
+#     save_as_tflite(model)
+
+model = load_model('mnist_classifier')
 
 col = (255, 0, 0) ##BGR Col for text on screen
 cam = cv2.VideoCapture('/dev/video0')
@@ -266,11 +289,15 @@ while True:
     if success:
         cam_window_size = frame.shape
 
-        original_frame, frame, cropped = crop_digit_from_frame(frame)
+        original_frame, frame, cropped = crop_digit_from_frame(frame, visualize=False)
 
         if cropped is not None:
 
-            cropped_normalized = normalize_digit(cropped)
+
+            cropped_normalized = normalize_digit(cropped, visualize=False)
+
+            cv2.imshow("Located Digit: ", cropped_normalized)
+
 
             prediction, certainty = predict_with_model(cropped_normalized)
 
