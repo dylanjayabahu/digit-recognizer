@@ -200,8 +200,8 @@ def crop_digit_from_frame(frame, visualize = True):
                 ##create an exact length for a square enclosing the digit
                 square_length = max([height, width])
 
-                ##add padding around the image as a quarter of the square length
-                padding = int(round(square_length/4)) ##NEEED TO CHANGE THIS TO MAKE SURE IT DOESNT GO OFF OF THE CROPPED IMAGE>>>. Pad can only get so big, so we need to check that
+                ##add padding around the image as a quarter of the square length. This assumes that the user leaves some padding on the sticky note.
+                padding = int(round(square_length/4))
 
                 ##create a new square length with padding taken into account
                 square_rad = (int(square_length/2) + padding) ##distance from the edges of swuare to center point
@@ -238,62 +238,67 @@ def crop_digit_from_frame(frame, visualize = True):
     #return the result
     return original_frame, frame, cropped
 
+def run_main():
+    ##main code to be run
+    global model, input_details, output_details
 
+    #if there is no tflite model that exists already, load a tf model and save it as tf lite
+    if not os.path.exists(HOME_DIR + "mnist_digit_float16.tflite"):
+        model = load_model('mnist_classifier') 
+        save_as_tflite(model)
 
-#if there is no tflite model that exists already, load a tf model and save it as tf lite
-if not os.path.exists(HOME_DIR + "mnist_digit_float16.tflite"):
-    model = load_model('mnist_classifier') 
-    save_as_tflite(model)
-
-##load the tflite model
-model  = tf.lite.Interpreter("mnist_digit_float16.tflite")
-##for raspberry pi, use model=tflite.Interpreter
-model.allocate_tensors()
-input_details = model.get_input_details()
-output_details = model.get_output_details()
-
-
-
-col = (255, 255, 255) ##BGR Col for prediction text on screen
-#get the video capture from a usb webcam
-
-cam = cv2.VideoCapture('/dev/video0') ##this may need to be changed 
-
-cv2.namedWindow("Camera Output") #create a window for camera output
-
-if not cam.isOpened():
-    raise Exception('Could not open video device')
-
-##run the main loop
-while True:
-    success, frame = cam.read()
-
-    if success:
-        cam_window_size = frame.shape
-
-        #locate the digit and crop 
-        original_frame, frame, cropped = crop_digit_from_frame(frame, visualize=False)
-
-        if cropped is not None:
-
-            ##Normalize the digit so the network can recognize it (grayscae with black background)
-            cropped_normalized = normalize_digit(cropped, visualize=False)
-
-            ##show the located digit
-            cv2.imshow("Located Digit: ", cropped_normalized)
-
-            ##predict with tflite model
-            prediction, certainty = predict_with_model(cropped_normalized)
-
-            ##show prediction on screen
-            frame = cv2.putText(frame, "Prediction: " + str(prediction), (25, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, col, 2)
+    ##load the tflite model
+    model  = tf.lite.Interpreter("mnist_digit_float16.tflite")
+    ##for raspberry pi, use model=tflite.Interpreter
+    model.allocate_tensors()
+    input_details = model.get_input_details()
+    output_details = model.get_output_details()
 
 
 
-        #show the frame 
-        cv2.imshow("Camera Output", frame)
-        key = cv2.waitKey(1) #wait 1 millisecond before showing next frame
+    col = (255, 255, 255) ##BGR Col for prediction text on screen
+    #get the video capture from a usb webcam
 
-    
-    if key in [ord('q')]: ##q key pressed ==> quit
-        break
+    cam = cv2.VideoCapture('/dev/video0') ##this may need to be changed 
+
+    cv2.namedWindow("Camera Output") #create a window for camera output
+
+    if not cam.isOpened():
+        raise Exception('Could not open video device')
+
+    ##run the main loop
+    while True:
+        success, frame = cam.read()
+
+        if success:
+            #locate the digit and crop 
+            original_frame, frame, cropped = crop_digit_from_frame(frame, visualize=False)
+
+            if cropped is not None:
+
+                ##Normalize the digit so the network can recognize it (grayscae with black background)
+                cropped_normalized = normalize_digit(cropped, visualize=False)
+
+                ##show the located digit
+                cv2.imshow("Located Digit: ", cropped_normalized)
+
+                ##predict with tflite model
+                prediction, certainty = predict_with_model(cropped_normalized)
+
+                ##show prediction on screen
+                frame = cv2.putText(frame, "Prediction: " + str(prediction), (25, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, col, 2)
+
+
+
+            #show the frame 
+            cv2.imshow("Camera Output", frame)
+            key = cv2.waitKey(1) #wait 1 millisecond before showing next frame
+
+        
+        if key in [ord('q')]: ##q key pressed ==> quit
+            break
+
+
+if __name__ == "__main__":
+   ##excecute only when run not via import
+   run_main()
