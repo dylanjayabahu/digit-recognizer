@@ -6,6 +6,7 @@ from pprint import pprint
 import random
 import tensorflow as tf
 
+# HOME_DIR = '/home/intern/code/Digit_Recognizer/'
 HOME_DIR = '/home/pi/code/Digit_Recognizer/'
 
 def save_as_tflite(model):
