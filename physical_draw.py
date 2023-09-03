@@ -6,7 +6,7 @@ from pprint import pprint
 import random
 import tensorflow as tf
 
-HOME_DIR = '/home/intern/code/Digit_Recognizer/'
+HOME_DIR = '/home/pi/code/Digit_Recognizer/'
 
 def save_as_tflite(model):
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
@@ -44,7 +44,7 @@ def predict_with_model(image):
     # Test model on random input data.
     input_shape = input_details[0]['shape']
     input_data = np.array(image, dtype=np.float16)
-    assert input_data.shape = input_shape
+    assert input_data.shape == input_shape
     
     interpreter.set_tensor(input_details[0]['index'], input_data)
     
@@ -252,7 +252,7 @@ def crop_digit_from_frame(frame):
 
 
 ##ensure SAVE_MODEL_DIR is set correctly in train_model.py and pass model name here. This will only be run once to save as tflite.
-if not os.path.exists(HOME_DIR + mnist_digit_float16.tflite)
+if not os.path.exists(HOME_DIR + mnist_digit_float16.tflite):
     model = load_model('mnist_classifier') 
     save_as_tflite(model)
 
