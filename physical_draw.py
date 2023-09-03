@@ -21,13 +21,6 @@ def save_as_tflite(model):
     with open(save_filename, 'wb') as f:
         f.write(tflite_model)
 
-
-def generate_random_color():
-    r = random.randint(0, 255)
-    g = random.randint(0, 255)
-    b = random.randint(0, 255)
-    return r, g, b
-
 def predict_with_model(image):
     ##takes in a normalized 28x28 image and feeds it into model
     ##returns models prediction as an integer
@@ -96,7 +89,7 @@ def get_border_vals(img):
 
     return border_vals
 
-def crop_digit_from_frame(frame):
+def crop_digit_from_frame(frame, visualize = True):
 
     original_frame = np.array(frame)
 
@@ -228,24 +221,23 @@ def crop_digit_from_frame(frame):
 
                 # warped = cv2.rectangle(warped, (x1, y1), (x2, y2), (0, 0, 0), 2)
 
-                
-
-
-                cv2.imshow("warped", warped)
-                cv2.waitKey(1)
-                cv2.imshow("warped_thresh", warped_threshold)
-                cv2.waitKey(1)
-
-
 
                 ##create a box around the digit 
 
                 cropped = warped[min(y1, y2):max(y1, y2), min(x1, x2):max(x1, x2)]
 
+                if visualize:
+                    cv2.imshow("warped", warped)
+                    cv2.waitKey(1)
+                    cv2.imshow("warped_thresh", warped_threshold)
+                    cv2.waitKey(1)
+                    cv2.imshow("final cropped", cropped)
+                    cv2.waitKey(1)
 
 
-    cv2.imshow("threshold", threshold)
-    cv2.waitKey(1)
+    if visualize:
+        cv2.imshow("threshold", threshold)
+        cv2.waitKey(1)
 
     return original_frame, frame, cropped
 
