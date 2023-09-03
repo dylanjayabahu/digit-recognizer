@@ -5,10 +5,11 @@ import time
 from pprint import pprint
 import random
 import tensorflow as tf
+#for raspberry pi, use import tflite_runtime.interpreter as tflite
 import os
 
-# HOME_DIR = '/home/intern/code/Digit_Recognizer/'
-HOME_DIR = '/home/pi/code/Digit_Recognizer/'
+HOME_DIR = '/home/intern/code/Digit_Recognizer/'
+# HOME_DIR = '/home/pi/code/Digit_Recognizer/'
 
 def save_as_tflite(model):
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
@@ -22,42 +23,25 @@ def save_as_tflite(model):
     with open(save_filename, 'wb') as f:
         f.write(tflite_model)
 
-def predict_with_model(image):
-    ##takes in a normalized 28x28 image and feeds it into model
-    ##returns models prediction as an integer
-
-    ##uses tflite model
-
-    # Load TFLite model and allocate tensors.
-    # interpreter = tf.lite.Interpreter(model_path="mnist_digit_float16.tflite")
-    # interpreter.allocate_tensors()
-    
-    # # Get input and output tensors.
-    # input_details = interpreter.get_input_details()
-    # output_details = interpreter.get_output_details()
-    
-    # # Test model on random input data.
-    # input_shape = input_details[0]['shape']
-    # input_data = np.array(image, dtype=np.float16)
-    # # assert input_data.shape == input_shape
-    
-    # interpreter.set_tensor(input_details[0]['index'], input_data)
-    
-    # interpreter.invoke()
-    
-    # output_data = interpreter.get_tensor(output_details[0]['index'])
+def predict_with_model(image, print_result=True):
 
 
-    # return int(np.argmax(output_data[0])), 100*np.max(output_data[0])
+    ##this code uses tflite model
+    image = np.array([image])
+    image = np.expand_dims(image, axis = -1)
+
+    model.set_tensor(input_details[0]['index'], image)
+    model.invoke()
+    prediction = model.get_tensor(output_details[0]['index'])
 
 
-    ##takes in a normalized 28x28 image and feeds it into model
-    ##returns models prediction as an integer
+    ##this code uses a tensorflow model that must be initalized somewhere in teh code
+    # prediction = model.predict(np.array([image]), verbose=0)
 
-    prediction = model.predict(np.array([image]), verbose=0)
 
     #print prediction and certainty
-    print("Prediction: " + str(np.argmax(prediction[0])),  "Certainty: " + str(100*np.max(prediction[0])) + "%",  end="\r")
+    if print_result:
+        print("Prediction: " + str(np.argmax(prediction[0])),  "Certainty: " + str(100*np.max(prediction[0])) + "%",  end="\r")
 
 
     return int(np.argmax(prediction[0])), 100*np.max(prediction[0])
@@ -265,14 +249,19 @@ def crop_digit_from_frame(frame, visualize = True):
 
 
 
-##ensure SAVE_MODEL_DIR is set correctly in train_model.py and pass model name here. This will only be run once to save as tflite.
-# if not os.path.exists(HOME_DIR + "mnist_digit_float16.tflite"):
-#     model = load_model('mnist_classifier') 
-#     save_as_tflite(model)
+#ensure SAVE_MODEL_DIR is set correctly in train_model.py and pass model name here. This will only be run once to save as tflite.
+if not os.path.exists(HOME_DIR + "mnist_digit_float16.tflite"):
+    model = load_model('mnist_classifier') 
+    save_as_tflite(model)
 
-model = load_model('mnist_classifier')
+# model = load_model('mnist_classifier')
+model  = tf.lite.Interpreter("mnist_digit_float16.tflite")
+##for raspberry pi, use model=tflite.Interpreter
+model.allocate_tensors()
+input_details = model.get_input_details()
+output_details = model.get_output_details()
 
-col = (255, 0, 0) ##BGR Col for text on screen
+col = (255, 255, 255) ##BGR Col for text on screen
 cam = cv2.VideoCapture('/dev/video0')
 
 
@@ -298,8 +287,11 @@ while True:
 
             cv2.imshow("Located Digit: ", cropped_normalized)
 
-
             prediction, certainty = predict_with_model(cropped_normalized)
+
+            frame = cv2.putText(frame, "Prediction: " + str(prediction), (25, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, col, 2)
+            # image = cv2.putText(image, text, org, font, fontScale,
+            #       color, thickness, cv2.LINE_AA, True) 
 
 
         cv2.imshow("Camera Output", frame)
