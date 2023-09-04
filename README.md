@@ -1,5 +1,5 @@
 # Digit_Recognizer
-AI project using tensorflow to train a convolutional neural network on the MNIST dataset of digits. Code to create and train the model found in train_model.py and data_augmentation.py.
+Machine Learning project using tensorflow to train a convolutional neural network on the MNIST dataset of digits. Code to create and train the model found in train_model.py and data_augmentation.py.
 Using external webcam, user can draw a digit on sticky note/piece of paper on a black background. Code will locate the rectangle paper and isolate the digit, then uses tf/tflite model to predict what digit is shown. Drawing code is found in physical_draw.py.
 
 ![exmpe](https://github.com/dylanj1383/Digit_Recognizer/assets/109835004/7554589d-0730-4ec1-ba69-06b35bf710fd)
