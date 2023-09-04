@@ -10,6 +10,4 @@ Simple AI project using tensorflow to train a model on the MNIST dataset of digi
  
 ### Command
 Run the physical_draw.py from command line or other text editor:
-...
-python physical_draw.py
-...
+{python physical_draw.py}
