@@ -1,13 +1,19 @@
 # Digit_Recognizer
-Simple AI project using tensorflow to train a model on the MNIST dataset of digits. Using external webcam, user can draw a digit on sticky note/piece of paper on a black background. Code will locate the rectangle paper and isolate the digit, then uses tf/tflite model to predict what digit is shown. 
+Simple AI project using tensorflow to train a convolutional neural network on the MNIST dataset of digits. Code to create and train the model found in train_model.py and data_augmentation.py.
+Using external webcam, user can draw a digit on sticky note/piece of paper on a black background. Code will locate the rectangle paper and isolate the digit, then uses tf/tflite model to predict what digit is shown. (physical_draw.py)
 
 ![exmpe](https://github.com/dylanj1383/Digit_Recognizer/assets/109835004/7554589d-0730-4ec1-ba69-06b35bf710fd)
 
 ### Prerequisites
 - Required Python Packages: OpenCV, Numpy
   - To run training code, tensorflow package is required
-  - To only run drawing code, tensorflow lite (tflite) package is requried
+  - To only run drawing code, only tensorflow lite (tflite) package is requried
  
-### Command
-Run the physical_draw.py from command line or other text editor:
-{python physical_draw.py}
+### Usage
+Run the physical_draw.py from command line:
+```
+python physical_draw.py
+```
+Place sticky note/paper in camera view, with a dark background. If a digit is recognized on the paper, the model prediction will be shown on screen. 
+Orientation of the sticky note shouldn't matter as it should be handled by the code. 
+Press 'q' to quit the program. 
