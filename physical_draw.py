@@ -1,28 +1,30 @@
+#ensure you have the required packages installed
+
 import cv2
-from train_model import load_model
+# from train_model import load_model 
 import numpy as np
-import tensorflow as tf
-#for raspberry pi, use import tflite_runtime.interpreter as tflite
+# import tensorflow as tf #use this if you have tensorflow installed
+import tflite_runtime.interpreter as tflite #for raspberry pi/if you don't have tf installed, use this
 import os
 
 
 ##change home_dir to reflect the file path on your system
-HOME_DIR = '/home/intern/code/Digit_Recognizer/'
-# HOME_DIR = '/home/pi/code/Digit_Recognizer/' 
+# HOME_DIR = '/home/intern/code/Digit_Recognizer/'
+HOME_DIR = '/home/dylan/code/Digit_Recognizer/'
 
-
-def save_as_tflite(model):
-    ##saves a regular tf model as tflite if not already done so
-    converter = tf.lite.TFLiteConverter.from_keras_model(model)
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    converter.target_spec.supported_types = [tf.float16] 
-    save_filename = '%s_float16.tflite' % "mnist_digit"
-    tflite_model = converter.convert()
+##only needed if you have trained your own model with tensorflow and want tos ave as tflite to run
+# def save_as_tflite(model):
+#     ##saves a regular tf model as tflite if not already done so
+#     converter = tf.lite.TFLiteConverter.from_keras_model(model)
+#     converter.optimizations = [tf.lite.Optimize.DEFAULT]
+#     converter.target_spec.supported_types = [tf.float16] 
+#     save_filename = '%s_float16.tflite' % "mnist_digit"
+#     tflite_model = converter.convert()
     
-    print('Saving model as %s' % save_filename)
+#     print('Saving model as %s' % save_filename)
     
-    with open(save_filename, 'wb') as f:
-        f.write(tflite_model)
+#     with open(save_filename, 'wb') as f:
+#         f.write(tflite_model)
 
 
 
@@ -243,13 +245,17 @@ def run_main():
     global model, input_details, output_details
 
     #if there is no tflite model that exists already, load a tf model and save it as tf lite
-    if not os.path.exists(HOME_DIR + "mnist_digit_float16.tflite"):
-        model = load_model('mnist_classifier') 
-        save_as_tflite(model)
+    #this is only needed if you have a different tf model saved
+    # if not os.path.exists(HOME_DIR + "mnist_digit_float16.tflite"):
+    #     model = load_model('mnist_classifier') 
+    #     save_as_tflite(model)
+
 
     ##load the tflite model
-    model  = tf.lite.Interpreter("mnist_digit_float16.tflite")
-    ##for raspberry pi, use model=tflite.Interpreter
+    # model  = tf.lite.Interpreter("mnist_digit_float16.tflite") ##use this if you have tf installed
+    
+    ##use the following code if you don't have tf isntalled (e.g. rpi)
+    model = tflite.Interpreter("mnist_digit_float16.tflite")
     model.allocate_tensors()
     input_details = model.get_input_details()
     output_details = model.get_output_details()
@@ -263,6 +269,7 @@ def run_main():
 
     cv2.namedWindow("Camera Output") #create a window for camera output
 
+    #ensure camera is working properly
     if not cam.isOpened():
         raise Exception('Could not open video device')
 
@@ -280,13 +287,14 @@ def run_main():
                 cropped_normalized = normalize_digit(cropped, visualize=False)
 
                 ##show the located digit
-                cv2.imshow("Located Digit: ", cropped_normalized)
+                # cv2.imshow("Located Digit: ", cropped_normalized)
 
                 ##predict with tflite model
                 prediction, certainty = predict_with_model(cropped_normalized)
 
-                ##show prediction on screen
-                frame = cv2.putText(frame, "Prediction: " + str(prediction), (25, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, col, 2)
+                ##show prediction on screen if certainty is above 60%
+                if certainty > 60:
+                    frame = cv2.putText(frame, "Prediction: " + str(prediction), (25, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, col, 2)
 
 
 
