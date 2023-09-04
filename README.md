@@ -7,7 +7,7 @@ Using external webcam, user can draw a digit on sticky note/piece of paper on a 
 ### Prerequisites
 - Required Python Packages: OpenCV, Numpy
   - To run training code, tensorflow package is required
-  - To only run drawing code, only tensorflow lite (tflite) package is requried
+  - To only run drawing code, only tensorflow lite (tflite) package is requried. With tflite, project can even be run on a raspberry pi. 
  
 ### Usage
 Run physical_draw.py from text editor, or run from command line:
