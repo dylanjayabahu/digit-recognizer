@@ -1,18 +1,29 @@
 #ensure you have the required packages installed
 
+tensorflow_package = 'tf' ##this should reflect wheather you have tensorflow installed or if you have just installed tflite_runtime
+# cam_type = '/dev/video0'
+cam_type = 0
+if tensorflow_package not in ['tf', 'tflite']:
+    raise Exception('Ensure you have installed either full tensorflow or just the tflite_runtime.\n Change the variable "tensorflow package" to reflect what you have installed.')
+
+
+if tensorflow_package=="tf":
+    import tensorflow as tf #use this if you have tensorflow installed
+elif tensorflow_package=="tflite":
+    import tflite_runtime.interpreter as tflite #for raspberry pi/if you don't have tf installed, use this
+
 import cv2
 # from train_model import load_model 
 import numpy as np
-# import tensorflow as tf #use this if you have tensorflow installed
-import tflite_runtime.interpreter as tflite #for raspberry pi/if you don't have tf installed, use this
 import os
 
 
 ##change home_dir to reflect the file path on your system
 # HOME_DIR = '/home/intern/code/Digit_Recognizer/'
-HOME_DIR = '/home/dylan/code/Digit_Recognizer/'
+# HOME_DIR = '/home/dylan/code/Digit_Recognizer/'
+HOME_DIR = 'C:\\Users\\dylan\\OneDrive\\Desktop\\code\\Digit_Recognizer'
 
-##only needed if you have trained your own model with tensorflow and want tos ave as tflite to run
+##only needed if you have trained your own model with tensorflow and want to save as tflite to run
 # def save_as_tflite(model):
 #     ##saves a regular tf model as tflite if not already done so
 #     converter = tf.lite.TFLiteConverter.from_keras_model(model)
@@ -251,21 +262,23 @@ def run_main():
     #     save_as_tflite(model)
 
 
-    ##load the tflite model
-    # model  = tf.lite.Interpreter("mnist_digit_float16.tflite") ##use this if you have tf installed
+    if tensorflow_package == "tf":
+        ##load the tflite model
+        model  = tf.lite.Interpreter("mnist_digit_float16.tflite") ##use this if you have tf installed
     
-    ##use the following code if you don't have tf isntalled (e.g. rpi)
-    model = tflite.Interpreter("mnist_digit_float16.tflite")
+    elif tensorflow_package == "tflite":
+        ##use the following code if you don't have tf isntalled (e.g. rpi)
+        model = tflite.Interpreter("mnist_digit_float16.tflite")
+
     model.allocate_tensors()
     input_details = model.get_input_details()
     output_details = model.get_output_details()
 
 
-
     col = (255, 255, 255) ##BGR Col for prediction text on screen
     #get the video capture from a usb webcam
 
-    cam = cv2.VideoCapture('/dev/video0') ##this may need to be changed 
+    cam = cv2.VideoCapture(cam_type) ##this may need to be changed 
 
     cv2.namedWindow("Camera Output") #create a window for camera output
 
