@@ -6,8 +6,8 @@ import os
 from data_augmentation import dataset_with_augmentation
 
 ## change these directories to match your system
-TENSORBOARD_DIR = '/home/intern/code/Digit_Recognizer/tensorboard_logs/'
-SAVED_MODELS_DIR = '/home/intern/code/Digit_Recognizer/saved_models/'
+TENSORBOARD_DIR = '/Users/ishariwaduwara-jayabahu/Desktop/Code/Python_Code/Breast_Cancer_AI/tensorboard_logs/'
+SAVED_MODELS_DIR = '/Users/ishariwaduwara-jayabahu/Desktop/Code/Python_Code/Breast_Cancer_AI/saved_models/'
 
 def make_model(show_summary = True):
     ##make model

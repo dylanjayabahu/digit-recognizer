@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow_addons as tfa
 import random
 import numpy as np
 import cv2
@@ -23,10 +22,6 @@ def random_crop(image, min_pad, max_pad):
 
     return tf.image.stateless_random_crop(padded_image, (28, 28, 1), seed)
 
-def random_rotate_crop(image, min_rad, max_rad):
-    return tfa.image.rotate(image, tf.constant(random.uniform(min_rad, max_rad)), fill_mode='constant')
-
-
 ##augment full dataset function
 def dataset_with_augmentation(x_data, y_data, transformations, batch_size):
     mem_ds = tf.data.Dataset.from_tensor_slices((x_data, y_data))
@@ -37,13 +32,6 @@ def dataset_with_augmentation(x_data, y_data, transformations, batch_size):
     # rng1 = tf.random.Generator.from_seed(123, alg='philox')
     
     for transform in transformations:
-        # rotate (and then crop to fit)
-        if 'rotate' == transform["name"]:
-            min = transform["min_rad"]
-            max = transform["max_rad"]
-            mem_ds = mem_ds.map(lambda x, y: (random_rotate_crop(x, min, max), y), num_parallel_calls=tf.data.AUTOTUNE)
-
-
         # crop 
         if 'crop' == transform["name"]:
             min = transform["min_pad"]
@@ -78,10 +66,6 @@ def view_augmentation():
 
     ##use the default transformations
     transformations = [
-            {"name":"rotate",
-            "min_rad":-math.pi/9,
-            "max_rad":math.pi/9},
-            
             {"name":"crop",
             "min_pad":0,
             "max_pad":5},
